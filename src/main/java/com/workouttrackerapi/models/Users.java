@@ -1,6 +1,7 @@
 package com.workouttrackerapi.models;
 
 import java.security.Timestamp;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -29,9 +30,10 @@ public class Users {
     private String name;
     private String email;
     private String password;
+    private String role;
 
     @CreationTimestamp
-    private Timestamp createdAt;
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "users", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Workouts> workouts;
