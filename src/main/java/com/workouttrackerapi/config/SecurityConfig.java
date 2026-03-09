@@ -1,5 +1,6 @@
 package com.workouttrackerapi.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,10 +8,23 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.workouttrackerapi.exceptions.AccessDeniedExceptionHandler;
+import com.workouttrackerapi.exceptions.EntryPointExceptionHandler;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Autowired
+    private JwtFilter jwtFilter;
+
+    @Autowired
+    private EntryPointExceptionHandler entryPointExceptionHandler;
+
+    @Autowired
+    private AccessDeniedExceptionHandler accessDeniedExceptionHandler;
 
     @Bean
     public SecurityFilterChain SecurityFilterChain(HttpSecurity http) throws Exception {
@@ -19,7 +33,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated())
-                .httpBasic(httpbasic -> httpbasic.disable());
+                .exceptionHandling(exp -> exp
+                        .authenticationEntryPoint(entryPointExceptionHandler)
+                        .accessDeniedHandler(accessDeniedExceptionHandler))
+                .httpBasic(httpbasic -> httpbasic.disable())
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
