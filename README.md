@@ -1,26 +1,26 @@
-# 🏋️ Workout Tracker API
+# Workout Tracker API
 
 A robust and secure REST API built using Spring Boot that helps users track, manage, and analyze their workout activities efficiently.
 
 ---
 
-## 🚀 Features
+## Features
 
-- 🔐 User Authentication (JWT-based)
-- 👤 User Registration & Login
-- 🏋️ Workout Management
+- User Authentication (JWT-based)
+- User Registration & Login
+- Workout Management
   - Add Workout
   - Update Workout
   - Delete Workout
   - Mark Workout as Completed
-- 📊 Track Workout Progress
-- 📄 API Documentation using Swagger
-- ✅ Input Validation
-- 🧪 Unit Testing with JUnit & Mockito
+-  Track Workout Progress
+-  API Documentation using Swagger
+-  Input Validation
+-  Unit Testing with JUnit & Mockito
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - Java
 - Spring Boot
@@ -34,17 +34,16 @@ A robust and secure REST API built using Spring Boot that helps users track, man
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 com.workouttrackerapi
-│── controllers
-│── services
-│── repositories
-│── models
-│── dtos
+│── auth
+│── common
 │── config
-│── exception
+│── exercise
+│── workout
 
-## 🔐 Authentication
+
+## Authentication
 
 This API uses **JWT (JSON Web Token)** for securing endpoints.
 
@@ -53,24 +52,24 @@ This API uses **JWT (JSON Web Token)** for securing endpoints.
 2. Login to get JWT token
 3. Use token in Swagger or Postman:
 
-## 📘 API Documentation (Swagger)
+## API Documentation (Swagger)
 
 After running the application, open:
 
-👉 http://localhost:8080/swagger-ui/index.html
+ http://localhost:8080/swagger-ui/index.html
 
 Features:
 - View all endpoints
 - Test APIs directly
-- Use **Authorize 🔒 button** for JWT
+- Use **Authorize button** for JWT
 
-## 📌 Sample Endpoints
+## Sample Endpoints
 
-### 🔑 Auth APIs
+### Auth APIs
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 
-### 🏋️ Workout APIs
+### Workout APIs
 - `POST /api/workouts`
 - `GET /api/workouts`
 - `PUT /api/workouts/{id}`
@@ -79,34 +78,33 @@ Features:
 
 ---
 
-## ⚙️ How to Run
+## How to Run
 
-### 1️⃣ Clone the Repository
+### 1️ Clone the Repository
 ```bash
 git clone https://github.com/your-username/workout-tracker-api.git
 
-2️⃣ Navigate to Project
+2️ Navigate to Project
   cd workout-tracker-api
 
-3️⃣ Run the Application
+3️ Run the Application
    mvn spring-boot:run
 
-🗄️ Database Configuration
+ Database Configuration
   spring.datasource.url=jdbc:mysql://localhost:3306/workout_db
   spring.datasource.username=root
   spring.datasource.password=your_password
 
 spring.jpa.hibernate.ddl-auto=update
 
-🧪 Testing
+   Testing
   This project includes:
-
-✅ Unit Testing
-✅ Mockito-based Service Testing
+    Unit Testing
+    Mockito-based Service Testing
 Run tests: mvn test
 
 
-⚠️ Best Practices Implemented
+  Best Practices Implemented
 Layered Architecture (Controller → Service → Repository)
 DTO Pattern
 Global Exception Handling
@@ -114,18 +112,18 @@ Secure Password Encoding (BCrypt)
 Clean Code Structure
 
 
-📌 Future Improvements
+  Future Improvements
 Role-based Authorization (Admin/User)
 Docker Support
 Deployment (AWS / Render)
 Pagination & Filtering
 Workout Analytics Dashboard
 
-👨‍💻 Author
+  Author
 
     Sonu Kumar
-📧 Email: gautamrocky909621@gmail.com
-🔗 LinkedIn: https://www.linkedin.com/in/sonu-kumar-9a59b52a4/
+    Email: gautamrocky909621@gmail.com
+    LinkedIn: https://www.linkedin.com/in/sonu-kumar-9a59b52a4/
 
 
 ⭐ If you like this project
