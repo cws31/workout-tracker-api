@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import com.workouttrackerapi.enums.*;
-import com.workouttrackerapi.models.Exercises;
-import com.workouttrackerapi.repositories.ExerciseRepository;
+import com.workouttrackerapi.exercise.model.Exercises;
+import com.workouttrackerapi.exercise.repository.ExerciseRepository;
+import com.workouttrackerapi.workout.enums.CATEGORY;
 
 @Component
 public class ExerciseSeeder implements CommandLineRunner {
