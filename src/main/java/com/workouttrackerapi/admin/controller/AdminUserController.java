@@ -3,6 +3,9 @@ package com.workouttrackerapi.admin.controller;
 import com.workouttrackerapi.admin.dto.BlockUserRequestDto;
 import com.workouttrackerapi.admin.dto.UserResponseDto;
 import com.workouttrackerapi.admin.service.AdminUserService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,8 +33,8 @@ public class AdminUserController {
     }
 
     @PatchMapping("/{id}/block")
-    public void blockUnblockUser(@PathVariable Long id, @RequestBody BlockUserRequestDto request) {
-        userService.blockUnblockUser(id, request.isActive());
+    public void blockUnblockUser(@Valid @PathVariable Long id, @RequestBody BlockUserRequestDto request) {
+        userService.blockUnblockUser(id, request.getActive());
     }
 
     @DeleteMapping("/{id}")

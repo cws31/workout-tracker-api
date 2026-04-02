@@ -23,5 +23,4 @@ public class UserResponseDto {
         this.isActive = isActive;
     }
 
-    // getters & setters
 }

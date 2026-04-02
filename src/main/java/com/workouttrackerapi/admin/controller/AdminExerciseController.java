@@ -4,6 +4,8 @@ import com.workouttrackerapi.admin.dto.ExerciseRequestDto;
 import com.workouttrackerapi.admin.dto.ExerciseResponseDto;
 import com.workouttrackerapi.admin.service.AdminExerciseService;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +21,7 @@ public class AdminExerciseController {
     }
 
     @PostMapping
-    public ExerciseResponseDto createExercise(@RequestBody ExerciseRequestDto dto) {
+    public ExerciseResponseDto createExercise(@Valid @RequestBody ExerciseRequestDto dto) {
         return service.createExercise(dto);
     }
 
@@ -29,7 +31,7 @@ public class AdminExerciseController {
     }
 
     @PutMapping("/{id}")
-    public ExerciseResponseDto updateExercise(@PathVariable Long id,
+    public ExerciseResponseDto updateExercise(@Valid @PathVariable Long id,
             @RequestBody ExerciseRequestDto dto) {
         return service.updateExercise(id, dto);
     }

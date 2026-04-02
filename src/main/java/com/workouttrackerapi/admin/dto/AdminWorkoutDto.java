@@ -2,8 +2,6 @@ package com.workouttrackerapi.admin.dto;
 
 import java.sql.Date;
 import java.sql.Time;
-import java.time.LocalDate;
-import java.time.LocalTime;
 
 import lombok.Getter;
 import lombok.Setter;

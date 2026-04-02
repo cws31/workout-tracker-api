@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.workouttrackerapi.auth.enums.Role;
 import com.workouttrackerapi.auth.model.Users;
 import com.workouttrackerapi.auth.repository.UserRepositories;
 import com.workouttrackerapi.auth.service.JwtsService;
@@ -60,7 +61,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (user != null && jaJwtsService.validateToken(email, token)) {
 
-                String role = user.getRole();
+                String role = "ROLE_" + user.getRole().name();
                 List<SimpleGrantedAuthority> authority = List.of(new SimpleGrantedAuthority(role));
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(email,

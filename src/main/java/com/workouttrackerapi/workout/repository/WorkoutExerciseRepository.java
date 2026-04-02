@@ -1,5 +1,6 @@
 package com.workouttrackerapi.workout.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +25,12 @@ public interface WorkoutExerciseRepository extends JpaRepository<WorkoutExercise
             @Param("exerciseId") Long exerciseId,
             @Param("userId") Long userId,
             @Param("status") STATUS status);
+
+    @Query("""
+                SELECT e.name FROM WorkoutExercises we
+                JOIN we.exercises e
+                GROUP BY e.name
+                ORDER BY COUNT(e.id) DESC
+            """)
+    List<String> findTopExercise(Pageable pageable);
 }

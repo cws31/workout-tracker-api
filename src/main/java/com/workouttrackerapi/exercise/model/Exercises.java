@@ -7,6 +7,8 @@ import com.workouttrackerapi.workout.model.WorkoutExercises;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,6 +30,8 @@ public class Exercises {
 
     private String name;
     private String description;
+
+    // @Enumerated(EnumType.STRING)
     private CATEGORY category;
     private String muscle_group;
 

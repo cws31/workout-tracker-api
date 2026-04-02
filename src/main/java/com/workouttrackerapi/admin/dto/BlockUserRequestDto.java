@@ -1,13 +1,17 @@
 package com.workouttrackerapi.admin.dto;
 
-public class BlockUserRequestDto {
-    private boolean active;
+import jakarta.validation.constraints.NotNull;
 
-    public boolean isActive() {
+public class BlockUserRequestDto {
+
+    @NotNull(message = "admin should either block or unblock the user")
+    private Boolean active;
+
+    public Boolean getActive() {
         return active;
     }
 
-    public void setActive(boolean active) {
+    public void setActive(Boolean active) {
         this.active = active;
     }
 }

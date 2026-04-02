@@ -10,6 +10,7 @@ import java.util.*;
 import com.workouttrackerapi.auth.dto.UserLoginRequest;
 import com.workouttrackerapi.auth.dto.UserRegistrationRequest;
 import com.workouttrackerapi.auth.dto.UserRegistrationResponse;
+import com.workouttrackerapi.auth.enums.Role;
 import com.workouttrackerapi.auth.model.Users;
 import com.workouttrackerapi.auth.repository.UserRepositories;
 import com.workouttrackerapi.common.exceptions.UserAllReadyExistedException;
@@ -29,38 +30,54 @@ public class AuthService {
     }
 
     public UserRegistrationResponse regiateruser(UserRegistrationRequest userRegistrationRequest) {
-        Users user = new Users();
 
-        Users ExistedUser = userRepositories.findByEmail(userRegistrationRequest.getEmail());
-        if (ExistedUser != null) {
-            throw new UserAllReadyExistedException("user all ready existed with this email");
+        Users existedUser = userRepositories.findByEmail(userRegistrationRequest.getEmail());
+        if (existedUser != null) {
+            throw new UserAllReadyExistedException("User already exists with this email");
         }
 
+        Users user = new Users();
         user.setName(userRegistrationRequest.getName());
         user.setEmail(userRegistrationRequest.getEmail());
         user.setPassword(passwordEncoder.encode(userRegistrationRequest.getPassword()));
-        user.setRole("ROLE_USER");
-        Users saveduser = userRepositories.save(user);
-        return new UserRegistrationResponse(saveduser.getId(), saveduser.getName(), saveduser.getEmail());
 
+        user.setRole(Role.USER);
+
+        user.setActive(true);
+
+        Users savedUser = userRepositories.save(user);
+
+        return new UserRegistrationResponse(
+                savedUser.getId(),
+                savedUser.getName(),
+                savedUser.getEmail());
     }
 
     public Map<String, Object> userLogin(UserLoginRequest userLoginRequest) {
+
         Users user = userRepositories.findByEmail(userLoginRequest.getEmail());
 
         if (user == null) {
-            throw new loginCredentialInvalidException(
-                    "invalid username or password");
-        }
-        String password = user.getPassword();
-        if (!passwordEncoder.matches(userLoginRequest.getPassword(), password)) {
-            throw new loginCredentialInvalidException(
-                    "invalid username or password");
+            throw new loginCredentialInvalidException("Invalid email or password");
         }
 
+        if (!user.isActive()) {
+            throw new loginCredentialInvalidException("Account is blocked by admin");
+        }
+
+        if (!passwordEncoder.matches(userLoginRequest.getPassword(), user.getPassword())) {
+            throw new loginCredentialInvalidException("Invalid email or password");
+        }
+
+        String token = jwtsService.generateToken(
+                user.getEmail(),
+                user.getRole());
+
         Map<String, Object> response = new HashMap<>();
-        String token = jwtsService.generateToken(userLoginRequest.getEmail(), user.getRole());
         response.put("token", token);
+        response.put("role", user.getRole());
+        response.put("userId", user.getId());
+
         return response;
     }
 

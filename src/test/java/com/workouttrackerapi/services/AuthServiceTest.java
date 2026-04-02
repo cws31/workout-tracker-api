@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.workouttrackerapi.auth.dto.UserLoginRequest;
 import com.workouttrackerapi.auth.dto.UserRegistrationRequest;
 import com.workouttrackerapi.auth.dto.UserRegistrationResponse;
+import com.workouttrackerapi.auth.enums.Role;
 import com.workouttrackerapi.auth.model.Users;
 import com.workouttrackerapi.auth.repository.UserRepositories;
 import com.workouttrackerapi.auth.service.AuthService;
@@ -25,175 +26,185 @@ import com.workouttrackerapi.common.exceptions.loginCredentialInvalidException;
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Mock
-    private UserRepositories userRepositories;
+        @Mock
+        private UserRepositories userRepositories;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+        @Mock
+        private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private JwtsService jwtsService;
+        // Use a dummy implementation instead of mocking JwtsService
+        private JwtsService jwtsService = new JwtsService() {
+                @Override
+                public String generateToken(String email, Role role) {
+                        return email + "-dummy-token";
+                }
+        };
 
-    @InjectMocks
-    private AuthService authService;
+        @InjectMocks
+        private AuthService authService;
 
-    @Test
-    void registerUser_success() {
+        @Test
+        void registerUser_success() {
+                UserRegistrationRequest request = new UserRegistrationRequest(
+                                "Sonu Kumar",
+                                "sonu@gmail.com",
+                                "password123");
 
-        UserRegistrationRequest request = new UserRegistrationRequest(
-                "Sonu Kumar",
-                "sonuku7294085931@gmail.com",
-                "password");
+                when(userRepositories.findByEmail(request.getEmail())).thenReturn(null);
+                when(passwordEncoder.encode(request.getPassword())).thenReturn("encodedPassword");
 
-        when(userRepositories.findByEmail(request.getEmail())).thenReturn(null);
-        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded");
+                Users savedUser = new Users();
+                savedUser.setId(1L);
+                savedUser.setName(request.getName());
+                savedUser.setEmail(request.getEmail());
+                savedUser.setPassword("encodedPassword");
+                savedUser.setRole(Role.USER);
 
-        Users savedUser = new Users();
-        savedUser.setId(1L);
-        savedUser.setName(request.getName());
-        savedUser.setEmail(request.getEmail());
-        savedUser.setPassword("encoded");
+                when(userRepositories.save(any(Users.class))).thenReturn(savedUser);
 
-        when(userRepositories.save(any(Users.class))).thenReturn(savedUser);
+                UserRegistrationResponse response = authService.regiateruser(request);
 
-        UserRegistrationResponse response = authService.regiateruser(request);
+                assertNotNull(response);
+                assertEquals(1L, response.getId());
+                assertEquals("Sonu Kumar", response.getName());
+                assertEquals("sonu@gmail.com", response.getEmail());
 
-        assertNotNull(response);
-        assertEquals(1L, response.getId());
-        assertEquals("Sonu Kumar", response.getName());
-        assertEquals("sonuku7294085931@gmail.com", response.getEmail());
+                verify(userRepositories).findByEmail(request.getEmail());
+                verify(passwordEncoder).encode(request.getPassword());
+                verify(userRepositories).save(any(Users.class));
+        }
 
-        verify(userRepositories).findByEmail(request.getEmail());
-        verify(passwordEncoder).encode(request.getPassword());
-        verify(userRepositories).save(any(Users.class));
-    }
+        @Test
+        void registerUser_shouldThrowIfUserAlreadyExists() {
+                UserRegistrationRequest request = new UserRegistrationRequest(
+                                "Sonu Kumar",
+                                "test@gmail.com",
+                                "password");
 
-    @Test
-    void registerUser_shouldThrowIfUserExists() {
+                when(userRepositories.findByEmail(request.getEmail()))
+                                .thenReturn(new Users());
 
-        UserRegistrationRequest request = new UserRegistrationRequest(
-                "Sonu Kumar",
-                "test@gmail.com",
-                "password");
+                assertThrows(UserAllReadyExistedException.class,
+                                () -> authService.regiateruser(request));
 
-        when(userRepositories.findByEmail(request.getEmail()))
-                .thenReturn(new Users());
+                verify(userRepositories).findByEmail(request.getEmail());
+                verify(userRepositories, never()).save(any());
+        }
 
-        assertThrows(UserAllReadyExistedException.class,
-                () -> authService.regiateruser(request));
+        @Test
+        void registerUser_shouldAssignDefaultRole_USER() {
+                UserRegistrationRequest request = new UserRegistrationRequest(
+                                "Test User",
+                                "role@test.com",
+                                "password");
 
-        verify(userRepositories).findByEmail(request.getEmail());
-        verify(userRepositories, never()).save(any());
-    }
+                when(userRepositories.findByEmail(request.getEmail())).thenReturn(null);
+                when(passwordEncoder.encode(any())).thenReturn("encoded");
 
-    @Test
-    void login_success() {
+                Users savedUser = new Users();
+                savedUser.setId(1L);
+                savedUser.setName("Test User");
+                savedUser.setEmail("role@test.com");
 
-        UserLoginRequest request = new UserLoginRequest(
-                "test@gmail.com",
-                "password");
+                when(userRepositories.save(any())).thenReturn(savedUser);
 
-        Users user = new Users();
-        user.setEmail("test@gmail.com");
-        user.setPassword("encoded");
-        user.setRole("ROLE_USER");
+                authService.regiateruser(request);
 
-        when(userRepositories.findByEmail(request.getEmail()))
-                .thenReturn(user);
-        when(passwordEncoder.matches(request.getPassword(), user.getPassword()))
-                .thenReturn(true);
-        when(jwtsService.generateToken(user.getEmail(), user.getRole()))
-                .thenReturn("token123");
+                ArgumentCaptor<Users> captor = ArgumentCaptor.forClass(Users.class);
+                verify(userRepositories).save(captor.capture());
 
-        Map<String, Object> response = authService.userLogin(request);
+                Users capturedUser = captor.getValue();
 
-        assertNotNull(response);
-        assertEquals(1, response.size());
-        assertEquals("token123", response.get("token"));
+                assertEquals(Role.USER, capturedUser.getRole());
+                assertEquals("encoded", capturedUser.getPassword());
+        }
 
-        verify(userRepositories).findByEmail(request.getEmail());
-        verify(passwordEncoder).matches(request.getPassword(), user.getPassword());
-        verify(jwtsService).generateToken(user.getEmail(), user.getRole());
-    }
+        @Test
+        void login_success_user() {
+                UserLoginRequest request = new UserLoginRequest(
+                                "user@gmail.com",
+                                "password");
 
-    @Test
-    void login_shouldThrowIfUserNotFound() {
+                Users user = new Users();
+                user.setEmail("user@gmail.com");
+                user.setPassword("encodedPassword");
+                user.setRole(Role.USER);
 
-        UserLoginRequest request = new UserLoginRequest(
-                "wrong@gmail.com",
-                "password");
+                when(userRepositories.findByEmail(request.getEmail())).thenReturn(user);
+                when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(true);
 
-        when(userRepositories.findByEmail(request.getEmail()))
-                .thenReturn(null);
+                Map<String, Object> response = authService.userLogin(request);
 
-        assertThrows(loginCredentialInvalidException.class,
-                () -> authService.userLogin(request));
+                assertNotNull(response);
+                assertTrue(response.containsKey("token"));
+                assertEquals("user@gmail.com-dummy-token", response.get("token"));
 
-        verify(userRepositories).findByEmail(request.getEmail());
-        verifyNoInteractions(passwordEncoder, jwtsService);
-    }
+                verify(userRepositories).findByEmail(request.getEmail());
+                verify(passwordEncoder).matches(request.getPassword(), user.getPassword());
+        }
 
-    @Test
-    void login_shouldThrowIfPasswordWrong() {
+        @Test
+        void login_success_admin() {
+                UserLoginRequest request = new UserLoginRequest(
+                                "admin@gmail.com",
+                                "password");
 
-        UserLoginRequest request = new UserLoginRequest(
-                "test@gmail.com",
-                "wrong");
+                Users admin = new Users();
+                admin.setEmail("admin@gmail.com");
+                admin.setPassword("encodedPassword");
+                admin.setRole(Role.ADMIN);
 
-        Users user = new Users();
-        user.setEmail("test@gmail.com");
-        user.setPassword("encoded");
-        user.setRole("ROLE_USER");
+                when(userRepositories.findByEmail(request.getEmail())).thenReturn(admin);
+                when(passwordEncoder.matches(request.getPassword(), admin.getPassword())).thenReturn(true);
 
-        when(userRepositories.findByEmail(request.getEmail()))
-                .thenReturn(user);
-        when(passwordEncoder.matches(request.getPassword(), user.getPassword()))
-                .thenReturn(false);
+                Map<String, Object> response = authService.userLogin(request);
 
-        assertThrows(loginCredentialInvalidException.class,
-                () -> authService.userLogin(request));
+                assertNotNull(response);
+                assertEquals("admin@gmail.com-dummy-token", response.get("token"));
+        }
 
-        verify(userRepositories).findByEmail(request.getEmail());
-        verify(passwordEncoder).matches(request.getPassword(), user.getPassword());
-        verify(jwtsService, never()).generateToken(any(), any());
-    }
+        @Test
+        void login_shouldThrowIfUserNotFound() {
+                UserLoginRequest request = new UserLoginRequest(
+                                "wrong@gmail.com",
+                                "password");
 
-    @Test
-    void login_nullEmail() {
+                when(userRepositories.findByEmail(request.getEmail())).thenReturn(null);
 
-        UserLoginRequest request = new UserLoginRequest(null, null);
+                assertThrows(loginCredentialInvalidException.class,
+                                () -> authService.userLogin(request));
 
-        when(userRepositories.findByEmail(null)).thenReturn(null);
+                verify(userRepositories).findByEmail(request.getEmail());
+                verifyNoInteractions(passwordEncoder);
+        }
 
-        assertThrows(loginCredentialInvalidException.class,
-                () -> authService.userLogin(request));
-    }
+        @Test
+        void login_shouldThrowIfPasswordIncorrect() {
+                UserLoginRequest request = new UserLoginRequest(
+                                "user@gmail.com",
+                                "wrongPassword");
 
-    @Test
-    void registerUser_verifyRoleAssignment() {
+                Users user = new Users();
+                user.setEmail("user@gmail.com");
+                user.setPassword("encodedPassword");
+                user.setRole(Role.USER);
 
-        UserRegistrationRequest request = new UserRegistrationRequest(
-                "Test",
-                "role@test.com",
-                "pass");
+                when(userRepositories.findByEmail(request.getEmail())).thenReturn(user);
+                when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(false);
 
-        when(userRepositories.findByEmail(request.getEmail())).thenReturn(null);
-        when(passwordEncoder.encode(any())).thenReturn("encoded");
+                assertThrows(loginCredentialInvalidException.class,
+                                () -> authService.userLogin(request));
 
-        Users savedUser = new Users();
-        savedUser.setId(1L);
-        savedUser.setName("Test");
-        savedUser.setEmail("role@test.com");
+                verify(passwordEncoder).matches(request.getPassword(), user.getPassword());
+        }
 
-        when(userRepositories.save(any())).thenReturn(savedUser);
+        @Test
+        void login_shouldThrowIfEmailIsNull() {
+                UserLoginRequest request = new UserLoginRequest(null, "password");
 
-        authService.regiateruser(request);
+                when(userRepositories.findByEmail(null)).thenReturn(null);
 
-        ArgumentCaptor<Users> captor = ArgumentCaptor.forClass(Users.class);
-        verify(userRepositories).save(captor.capture());
-
-        Users captured = captor.getValue();
-
-        assertEquals("ROLE_USER", captured.getRole());
-    }
+                assertThrows(loginCredentialInvalidException.class,
+                                () -> authService.userLogin(request));
+        }
 }

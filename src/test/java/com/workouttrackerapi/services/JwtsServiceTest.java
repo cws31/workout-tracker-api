@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.workouttrackerapi.auth.enums.Role;
 import com.workouttrackerapi.auth.service.JwtsService;
 
 @ExtendWith(MockitoExtension.class)
@@ -19,7 +20,7 @@ class JwtsServiceTest {
     void generateToken_shouldWork() {
         String token = jwtsService.generateToken(
                 "sonuku7294085931@gmail.com",
-                "ROLE_USER");
+                Role.USER);
 
         assertNotNull(token);
         assertFalse(token.isEmpty());

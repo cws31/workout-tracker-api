@@ -6,6 +6,7 @@ import com.workouttrackerapi.workout.enums.STATUS;
 import com.workouttrackerapi.workout.repository.WorkOutRepository;
 import com.workouttrackerapi.workout.repository.WorkoutExerciseRepository;
 
+import java.util.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +33,17 @@ public class AdminDashboardService {
         long totalWorkouts = workoutRepository.count();
         long completedWorkouts = workoutRepository.countByStaus(STATUS.COMPLETED);
 
+        List<Object[]> result = workoutRepository.countCompletedWorkoutsPerDay();
+
+        Map<String, Long> workoutsPerDay = new HashMap<>();
+
+        for (Object[] row : result) {
+            String date = row[0].toString(); // LocalDate → String
+            Long count = (Long) row[1];
+
+            workoutsPerDay.put(date, count);
+        }
+
         String topExercise = workoutExerciseRepository
                 .findTopExercise(PageRequest.of(0, 1))
                 .stream()
@@ -43,6 +55,7 @@ public class AdminDashboardService {
                 totalWorkouts,
                 completedWorkouts,
                 activeUsers,
-                topExercise);
+                topExercise,
+                workoutsPerDay);
     }
 }

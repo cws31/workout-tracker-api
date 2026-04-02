@@ -4,6 +4,8 @@ import java.util.Date;
 
 import org.springframework.stereotype.Service;
 
+import com.workouttrackerapi.auth.enums.Role;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -13,7 +15,7 @@ public class JwtsService {
 
     private String SCRETE = "workoutapiapplicationwhichhelpfitnessenthusiaststomanagetheirworkoutanda=cantrackthirprogress";
 
-    public String generateToken(String email, String role) {
+    public String generateToken(String email, Role role) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)

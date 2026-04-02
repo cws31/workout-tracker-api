@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
@@ -19,6 +20,7 @@ import com.workouttrackerapi.common.exceptions.EntryPointExceptionHandler;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity // 🔥 IMPORTANT (for @PreAuthorize)
 public class SecurityConfig {
 
         @Autowired
@@ -39,12 +41,18 @@ public class SecurityConfig {
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                                 .authorizeHttpRequests(auth -> auth
+
                                                 .requestMatchers(
                                                                 "/api/auth/**",
                                                                 "/swagger-ui/**",
                                                                 "/swagger-ui.html",
                                                                 "/v3/api-docs/**")
                                                 .permitAll()
+
+                                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                                                .requestMatchers("/api/workouts/**").hasAnyRole("USER", "ADMIN")
+
                                                 .anyRequest().authenticated())
 
                                 .exceptionHandling(exp -> exp
