@@ -25,21 +25,26 @@ It also includes a powerful Admin Panel for system management and analytics.
    ## Admin Panel Features
    . Admin Dashboard
      - Total Users
-     - Active Users
-     - Total Workouts
-     - Completed Workouts
-     - Top Exercise Tracking
-     - Daily Completed Workouts Analytics 
-   . User Management
-     - User Management
-   . Exercise Management
-     - Add / Update / Delete Exercises
-   . Workout Monitoring
-     - View and manage all workouts
+  - Active Users
+  - Total Workouts
+  - Completed Workouts
+  - Top Exercise Tracking
+  - Daily Completed Workouts Analytics
 
-   . API Documentation using Swagger
-   . Input Validation
-   . Unit Testing with JUnit & Mockito
+- User Management
+  - Block / Unblock User
+
+- Exercise Management
+  - Add Exercise
+  - Update Exercise
+  - Delete Exercise
+
+- Workout Monitoring
+  - View and Manage All Workouts
+
+- API Documentation using Swagger
+- Input Validation
+- Unit Testing with JUnit & Mockito
 
 ---
 
