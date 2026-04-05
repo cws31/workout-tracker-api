@@ -1,36 +1,34 @@
 Workout Tracker API
 
-A robust and secure REST API built using Spring Boot that helps users track, manage, and analyze their workout activities efficiently. The system also includes a powerful Admin Panel for managing users, workouts, and exercises.
+A robust and secure REST API built using Spring Boot that helps users track, manage, and analyze their workout activities efficiently. It also includes a powerful Admin Panel for system management and analytics.
 
 Features
-User Features
 User Authentication (JWT-based)
 User Registration & Login
+User Features
 Workout Management
 Add Workout
 Update Workout
 Delete Workout
 Mark Workout as Completed
 Track Workout Progress
-Input Validation
 Admin Panel Features
-Admin Login (Secure Access)
-Dashboard Analytics
+Admin Dashboard
 Total Users
 Active Users
 Total Workouts
 Completed Workouts
-Top Exercises
-Workouts Completed Per Day
+Top Exercise Tracking
+Daily Completed Workouts Analytics
 User Management
 Block / Unblock Users
 Exercise Management
-Add Exercise
-Update Exercise
-Delete Exercise
+Add / Update / Delete Exercises
 Workout Monitoring
-View All User Workouts
-Track Workout Status
+View and manage all workouts
+API Documentation using Swagger
+Input Validation
+Unit Testing with JUnit & Mockito
 Tech Stack
 Java
 Spring Boot
@@ -42,13 +40,15 @@ MySQL / H2 Database
 Swagger (OpenAPI 3)
 JUnit & Mockito
 Project Structure
+
 com.workouttrackerapi
-│── admin          # Admin panel (dashboard, user, exercise, workout management)
-│── auth           # Authentication & authorization
-│── common         # Common utilities & exceptions
-│── config         # Security & configuration
-│── exercise       # Exercise module
-│── workout        # Workout module
+│── auth
+│── common
+│── config
+│── admin
+│── exercise
+│── workout
+
 Authentication
 
 This API uses JWT (JSON Web Token) for securing endpoints.
@@ -64,6 +64,7 @@ After running the application, open:
 http://localhost:8080/swagger-ui/index.html
 
 Features:
+
 View all endpoints
 Test APIs directly
 Use Authorize button for JWT
@@ -78,22 +79,18 @@ PUT /api/workouts/{id}
 DELETE /api/workouts/{id}
 PATCH /api/workouts/{id}/complete
 Admin APIs
-Dashboard
 GET /api/admin/dashboard
-User Management
 PATCH /api/admin/users/{id}/block
-Exercise Management
 POST /api/admin/exercises
 PUT /api/admin/exercises/{id}
 DELETE /api/admin/exercises/{id}
-Workout Monitoring
 GET /api/admin/workouts
 How to Run
-1 Clone the Repository
+1️ Clone the Repository
 git clone https://github.com/your-username/workout-tracker-api.git
-2 Navigate to Project
+2️ Navigate to Project
 cd workout-tracker-api
-3 Run the Application
+3️ Run the Application
 mvn spring-boot:run
 Database Configuration
 spring.datasource.url=jdbc:mysql://localhost:3306/workout_db
@@ -117,14 +114,12 @@ DTO Pattern
 Global Exception Handling
 Secure Password Encoding (BCrypt)
 Clean Code Structure
-Role-based Separation (Admin/User)
 Future Improvements
-Role-based Authorization Enhancements
+Role-based Authorization (Admin/User enhancements)
 Docker Support
 Deployment (AWS / Render)
 Pagination & Filtering
-Advanced Workout Analytics Dashboard
-Real-time Notifications
+Advanced Workout Analytics Dashboard (Charts & Insights)
 Author
 
 Sonu Kumar
@@ -132,6 +127,5 @@ Email: gautamrocky909621@gmail.com
 
 LinkedIn: https://www.linkedin.com/in/sonu-kumar-9a59b52a4/
 
-If you like this project
-
-Give it a star on GitHub and share it!
+⭐ If you like this project
+Give it a ⭐ on GitHub and share it!
