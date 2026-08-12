@@ -53,7 +53,9 @@ public class SecurityConfig {
                                                                 "/v3/api-docs/**")
                                                 .permitAll()
                                                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                                                .requestMatchers("/api/workout/**", "/api/workouts/**")
+                                                .requestMatchers(
+                                                                "/api/workout", "/api/workout/**",
+                                                                "/api/workouts", "/api/workouts/**")
                                                 .hasAnyRole("USER", "ADMIN")
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(exp -> exp
