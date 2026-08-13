@@ -47,7 +47,7 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authHeader.substring(7);
+        String token = authHeader.substring(7).trim();
 
         try {
             String email = jaJwtsService.extracteEmail(token);
@@ -56,12 +56,20 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 Users user = userRepositories.findByEmail(email);
 
-                if (user != null && jaJwtsService.validateToken(email, token)) {
+                if (user == null) {
+                    logger.warn("JWT Filter Error: User not found in database for email -> " + email);
+                } else if (!jaJwtsService.validateToken(email, token)) {
+                    logger.warn("JWT Filter Error: Token validation failed for email -> " + email);
+                } else {
+                    String roleName = user.getRole() != null ? user.getRole().name() : "USER";
+                    String roleWithPrefix = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+                    String rawRole = roleName.replace("ROLE_", "");
 
-                    String roleName = user.getRole().name();
-                    String grantedRole = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
-
-                    List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(grantedRole));
+                    // Grant both "ROLE_USER" and "USER" so hasRole("USER") and
+                    // hasAuthority("ROLE_USER") both succeed
+                    List<SimpleGrantedAuthority> authorities = List.of(
+                            new SimpleGrantedAuthority(roleWithPrefix),
+                            new SimpleGrantedAuthority(rawRole));
 
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             email, null, authorities);
@@ -72,7 +80,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e);
+            logger.error("JWT Authentication failed: " + e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);

@@ -50,13 +50,14 @@ public class SecurityConfig {
                                                                 "/api/auth/**",
                                                                 "/swagger-ui/**",
                                                                 "/swagger-ui.html",
+                                                                "/v3/api-docs",
                                                                 "/v3/api-docs/**")
                                                 .permitAll()
-                                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
                                                 .requestMatchers(
                                                                 "/api/workout", "/api/workout/**",
                                                                 "/api/workouts", "/api/workouts/**")
-                                                .hasAnyRole("USER", "ADMIN")
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_ADMIN", "USER", "ADMIN")
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(exp -> exp
                                                 .authenticationEntryPoint(entryPointExceptionHandler)
