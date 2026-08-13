@@ -246,6 +246,7 @@ public class WorkoutService {
             wd.setDescription(wk.getDescription());
             wd.setScheduledDate(wk.getScheduledDate());
             wd.setScheduledTime(wk.getScheduledTime());
+            wd.setId(wk.getId());
 
             List<Workout_Exercises_Request> exerciseList = new ArrayList<>();
 
