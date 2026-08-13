@@ -225,7 +225,7 @@ public class WorkoutService {
                     we.getReps(),
                     we.getWeight()));
         }
-        return new WorkoutDetaiilsResponse(wk.getTitle(), wk.getDescription(), wk.getScheduledDate(),
+        return new WorkoutDetaiilsResponse(wk.getId(), wk.getTitle(), wk.getDescription(), wk.getScheduledDate(),
                 wk.getScheduledTime(), list);
     }
 
