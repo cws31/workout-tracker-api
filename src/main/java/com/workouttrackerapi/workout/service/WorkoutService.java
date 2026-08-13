@@ -99,7 +99,7 @@ public class WorkoutService {
             list.add(resExe);
         }
 
-        return new WorkoutResponse(savvedWorkouts.getTitle(),
+        return new WorkoutResponse(savvedWorkouts.getId(), savvedWorkouts.getTitle(),
                 savvedWorkouts.getDescription(),
                 savvedWorkouts.getScheduledDate(),
                 savvedWorkouts.getScheduledTime(),
