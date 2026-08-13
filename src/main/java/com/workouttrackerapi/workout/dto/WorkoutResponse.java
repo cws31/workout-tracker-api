@@ -17,7 +17,8 @@ import java.sql.Time;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WorkoutResponse {
-
+    
+    private Long id;
     private String title;
     private String description;
     private Date scheduledDate;
