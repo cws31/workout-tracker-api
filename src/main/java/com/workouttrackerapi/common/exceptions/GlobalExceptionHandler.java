@@ -11,7 +11,6 @@ import com.workouttrackerapi.auth.repository.UserRepositories;
 import java.time.LocalDateTime;
 import java.util.*;
 
-// golbal exception handler using RestControllerAdvice
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
