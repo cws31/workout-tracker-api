@@ -1,14 +1,9 @@
 package com.workouttrackerapi.workout.model;
 
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.workouttrackerapi.exercise.model.Exercises;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,17 +17,16 @@ public class WorkoutExercises {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long sets;
-    private Long reps;
-    private Double weight;
-
     @ManyToOne
     @JoinColumn(name = "workout_id", nullable = false)
     @JsonIgnore
     private Workouts workouts;
 
     @ManyToOne
-    @JoinColumn(name = "exercie_id", nullable = false)
-
+    @JoinColumn(name = "exercise_id", nullable = false)
     private Exercises exercises;
+
+    // Replaced flat sets, reps, and weight with individual sets mapping
+    @OneToMany(mappedBy = "workoutExercises", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<WorkoutSets> workoutSets;
 }

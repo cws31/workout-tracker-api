@@ -1,5 +1,6 @@
 package com.workouttrackerapi.workout.service;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ import com.workouttrackerapi.workout.dto.WorkoutCompletionResponse;
 import com.workouttrackerapi.workout.dto.WorkoutDetaiilsResponse;
 import com.workouttrackerapi.workout.dto.WorkoutRequest;
 import com.workouttrackerapi.workout.dto.WorkoutResponse;
+import com.workouttrackerapi.workout.dto.WorkoutSetRequest;
 import com.workouttrackerapi.workout.dto.Workout_Exercises_Request;
 import com.workouttrackerapi.workout.dto.reports.MonthlySummaryResponse;
 import com.workouttrackerapi.workout.dto.reports.ProgressResponse;
@@ -27,6 +29,7 @@ import com.workouttrackerapi.workout.dto.reports.WorkoutHistoryResponse;
 
 import com.workouttrackerapi.workout.enums.STATUS;
 import com.workouttrackerapi.workout.model.WorkoutHistory;
+import com.workouttrackerapi.workout.model.WorkoutSets;
 import com.workouttrackerapi.workout.model.WorkoutExercises;
 import com.workouttrackerapi.workout.model.Workouts;
 import com.workouttrackerapi.workout.repository.*;
@@ -54,11 +57,9 @@ public class WorkoutService {
                 wpRequest.getScheduled_date(), wpRequest.getScheduled_time());
         if (existed_workout != null) {
             throw new WorkoutSlotBookedException(
-                    "you all ready have a workout scheduled at this time " + existed_workout.getTitle()
+                    "You already have a workout scheduled at this time: " + existed_workout.getTitle()
                             + " " + existed_workout.getScheduledDate()
-                            + " "
-                            + existed_workout.getScheduledTime());
-
+                            + " " + existed_workout.getScheduledTime());
         }
 
         Workouts workouts = new Workouts();
@@ -69,43 +70,37 @@ public class WorkoutService {
         workouts.setUsers(user);
         workouts.setStaus(STATUS.PLANNED);
 
-        ArrayList<WorkoutExercises> workout_Exercises_list = new ArrayList<>();
+        List<WorkoutExercises> workoutExercisesList = new ArrayList<>();
+
         for (Workout_Exercises_Request req : wpRequest.getWorkout_Exercises_Request()) {
+            Exercises exe = eRepository.findById(req.getId())
+                    .orElseThrow(() -> new ExerciseNotFoundException("Exercise not found for id " + req.getId()));
 
-            Optional<Exercises> exe = eRepository.findById(req.getId());
-            if (exe.isEmpty()) {
+            WorkoutExercises workoutExercise = new WorkoutExercises();
+            workoutExercise.setExercises(exe);
+            workoutExercise.setWorkouts(workouts);
 
-                throw new ExerciseNotFoundException("exercise not found for id " + req.getId());
+            // Map individual sets
+            List<WorkoutSets> workoutSetsList = new ArrayList<>();
+            if (req.getSets() != null) {
+                for (WorkoutSetRequest setReq : req.getSets()) {
+                    WorkoutSets set = new WorkoutSets();
+                    set.setSetNumber(setReq.getSetNumber());
+                    set.setSetType(setReq.getSetType() != null ? setReq.getSetType() : "WORKING");
+                    set.setReps(setReq.getReps());
+                    set.setWeight(setReq.getWeight());
+                    set.setWorkoutExercises(workoutExercise);
+                    workoutSetsList.add(set);
+                }
             }
-            WorkoutExercises workout_Exercises = new WorkoutExercises();
-            workout_Exercises.setExercises(exe.get());
-            workout_Exercises.setReps(req.getReps());
-            workout_Exercises.setSets(req.getSets());
-            workout_Exercises.setWeight(req.getWeight());
-            workout_Exercises.setWorkouts(workouts);
-            workout_Exercises_list.add(workout_Exercises);
-        }
-        workouts.setWorkout_Exercises(workout_Exercises_list);
-
-        Workouts savvedWorkouts = workOutRepository.save(workouts);
-
-        List<Workout_Exercises_Request> list = new ArrayList<>();
-        for (WorkoutExercises req : savvedWorkouts.getWorkout_Exercises()) {
-            Workout_Exercises_Request resExe = new Workout_Exercises_Request();
-            resExe.setId(req.getId());
-            resExe.setReps(req.getReps());
-            resExe.setSets(req.getSets());
-            resExe.setWeight(req.getWeight());
-            list.add(resExe);
+            workoutExercise.setWorkoutSets(workoutSetsList);
+            workoutExercisesList.add(workoutExercise);
         }
 
-        return new WorkoutResponse(savvedWorkouts.getId(), savvedWorkouts.getTitle(),
-                savvedWorkouts.getDescription(),
-                savvedWorkouts.getScheduledDate(),
-                savvedWorkouts.getScheduledTime(),
-                savvedWorkouts.getUsers().getId(),
-                list);
+        workouts.setWorkout_Exercises(workoutExercisesList);
+        Workouts savedWorkouts = workOutRepository.save(workouts);
 
+        return mapToResponse(savedWorkouts);
     }
 
     public WorkoutResponse updateWorkout(Long id, UpdateRequest updateRequest,
@@ -133,27 +128,42 @@ public class WorkoutService {
                 for (WorkoutExercises we : workouts.getWorkout_Exercises()) {
                     if (we.getExercises().getId().equals(req.getId())) {
                         if (req.getSets() != null) {
-                            we.setSets(req.getSets());
-                        }
-                        if (req.getReps() != null) {
-                            we.setReps(req.getReps());
-                        }
-                        if (req.getWeight() != null) {
-                            we.setWeight(req.getWeight());
+                            List<WorkoutSets> updatedSetsList = new ArrayList<>();
+                            for (WorkoutSetRequest setReq : req.getSets()) {
+                                WorkoutSets set = new WorkoutSets();
+                                set.setSetNumber(setReq.getSetNumber());
+                                set.setSetType(setReq.getSetType() != null ? setReq.getSetType() : "WORKING");
+                                set.setReps(setReq.getReps());
+                                set.setWeight(setReq.getWeight());
+                                set.setWorkoutExercises(we);
+                                updatedSetsList.add(set);
+                            }
+                            we.getWorkoutSets().clear();
+                            we.getWorkoutSets().addAll(updatedSetsList);
                         }
                         exist = true;
                         break;
                     }
                 }
+
                 if (!exist) {
                     WorkoutExercises workoutExercise = new WorkoutExercises();
-
                     workoutExercise.setExercises(exercise);
-                    workoutExercise.setSets(req.getSets());
-                    workoutExercise.setReps(req.getReps());
-                    workoutExercise.setWeight(req.getWeight());
                     workoutExercise.setWorkouts(workouts);
 
+                    List<WorkoutSets> workoutSetsList = new ArrayList<>();
+                    if (req.getSets() != null) {
+                        for (WorkoutSetRequest setReq : req.getSets()) {
+                            WorkoutSets set = new WorkoutSets();
+                            set.setSetNumber(setReq.getSetNumber());
+                            set.setSetType(setReq.getSetType() != null ? setReq.getSetType() : "WORKING");
+                            set.setReps(setReq.getReps());
+                            set.setWeight(setReq.getWeight());
+                            set.setWorkoutExercises(workoutExercise);
+                            workoutSetsList.add(set);
+                        }
+                    }
+                    workoutExercise.setWorkoutSets(workoutSetsList);
                     workouts.getWorkout_Exercises().add(workoutExercise);
                 }
             }
@@ -169,29 +179,36 @@ public class WorkoutService {
     }
 
     private WorkoutResponse mapToResponse(Workouts workout) {
-
-        List<Workout_Exercises_Request> exercises = new ArrayList<>();
+        List<Workout_Exercises_Request> exerciseDtos = new ArrayList<>();
 
         for (WorkoutExercises we : workout.getWorkout_Exercises()) {
-
             Workout_Exercises_Request dto = new Workout_Exercises_Request();
-
             dto.setId(we.getExercises().getId());
-            dto.setSets(we.getSets());
-            dto.setReps(we.getReps());
-            dto.setWeight(we.getWeight());
+            dto.setName(we.getExercises().getName());
 
-            exercises.add(dto);
+            List<WorkoutSetRequest> setDtos = new ArrayList<>();
+            if (we.getWorkoutSets() != null) {
+                for (WorkoutSets ws : we.getWorkoutSets()) {
+                    WorkoutSetRequest setDto = new WorkoutSetRequest();
+                    setDto.setSetNumber(ws.getSetNumber());
+                    setDto.setSetType(ws.getSetType());
+                    setDto.setReps(ws.getReps());
+                    setDto.setWeight(ws.getWeight());
+                    setDtos.add(setDto);
+                }
+            }
+            dto.setSets(setDtos);
+            exerciseDtos.add(dto);
         }
 
         WorkoutResponse response = new WorkoutResponse();
-
+        response.setId(workout.getId());
         response.setTitle(workout.getTitle());
         response.setDescription(workout.getDescription());
         response.setScheduledDate(workout.getScheduledDate());
         response.setScheduledTime(workout.getScheduledTime());
         response.setUserId(workout.getUsers().getId());
-        response.setWorkout_Exercises_Request(exercises);
+        response.setWorkout_Exercises_Request(exerciseDtos);
 
         return response;
     }
@@ -212,18 +229,26 @@ public class WorkoutService {
         Optional<Workouts> existedworkout = workOutRepository.findByIdAndUsersId(workoutid, userid);
 
         if (existedworkout.isEmpty()) {
-            throw new WorkoutNotFoundException(" workwouts not found");
+            throw new WorkoutNotFoundException("workouts not found");
         }
         Workouts wk = existedworkout.get();
 
         List<Workout_Exercises_Request> list = new ArrayList<>();
         for (WorkoutExercises we : wk.getWorkout_Exercises()) {
+            List<WorkoutSetRequest> setRequests = new ArrayList<>();
+            if (we.getWorkoutSets() != null) {
+                for (WorkoutSets ws : we.getWorkoutSets()) {
+                    setRequests.add(new WorkoutSetRequest(
+                            ws.getSetNumber(),
+                            ws.getSetType(),
+                            ws.getReps(),
+                            ws.getWeight()));
+                }
+            }
             list.add(new Workout_Exercises_Request(
                     we.getExercises().getId(),
                     we.getExercises().getName(),
-                    we.getSets(),
-                    we.getReps(),
-                    we.getWeight()));
+                    setRequests));
         }
         return new WorkoutDetaiilsResponse(wk.getId(), wk.getTitle(), wk.getDescription(), wk.getScheduledDate(),
                 wk.getScheduledTime(), list);
@@ -252,13 +277,21 @@ public class WorkoutService {
 
             for (WorkoutExercises we : wk.getWorkout_Exercises()) {
 
-                Workout_Exercises_Request dto = new Workout_Exercises_Request();
+                List<WorkoutSetRequest> setRequests = new ArrayList<>();
+                if (we.getWorkoutSets() != null) {
+                    for (WorkoutSets ws : we.getWorkoutSets()) {
+                        setRequests.add(new WorkoutSetRequest(
+                                ws.getSetNumber(),
+                                ws.getSetType(),
+                                ws.getReps(),
+                                ws.getWeight()));
+                    }
+                }
 
+                Workout_Exercises_Request dto = new Workout_Exercises_Request();
                 dto.setName(we.getExercises().getName());
                 dto.setId(we.getExercises().getId());
-                dto.setSets(we.getSets());
-                dto.setReps(we.getReps());
-                dto.setWeight(we.getWeight());
+                dto.setSets(setRequests);
 
                 exerciseList.add(dto);
             }
@@ -271,8 +304,7 @@ public class WorkoutService {
         return responselist;
     }
 
-    public WorkoutCompletionResponse completeWorkout(Long workoutId, Users user, WorkoutCompletionRequest request) {
-
+    public Workouts completeWorkout(Long workoutId, Users user, WorkoutCompletionRequest request) {
         Workouts workout = workOutRepository.findById(workoutId)
                 .orElseThrow(() -> new WorkoutNotFoundException("Workout not found"));
 
@@ -295,11 +327,8 @@ public class WorkoutService {
 
         workoutHistoryRepository.save(history);
 
-        return new WorkoutCompletionResponse("Workout marked as completed", "COMPLETED");
+        return workout;
     }
-
-    ////////////////// ************ */ workout report
-    ////////////////// service************************////////////////
 
     public List<WorkoutHistoryResponse> getWorkoutHistory(Users user) {
 
@@ -349,5 +378,59 @@ public class WorkoutService {
         Integer totalDuration = result[1] != null ? ((Number) result[1]).intValue() : 0;
 
         return new MonthlySummaryResponse(totalWorkouts, totalDuration);
+    }
+
+    public List<WorkoutSetRequest> getLastExercisePerformance(Long exerciseId, Users user) {
+
+        List<WorkoutSets> lastSets = workoutExerciseRepository.findLastCompletedExerciseSets(
+                exerciseId, user.getId(), STATUS.COMPLETED, PageRequest.of(0, 20));
+
+        List<WorkoutSetRequest> response = new ArrayList<>();
+        if (lastSets != null && !lastSets.isEmpty()) {
+
+            for (WorkoutSets ws : lastSets) {
+                response.add(new WorkoutSetRequest(
+                        ws.getSetNumber(),
+                        ws.getSetType(),
+                        ws.getReps(),
+                        ws.getWeight()));
+            }
+        }
+        return response;
+    }
+
+    public List<String> checkAndCelebratePRs(Workouts workout, Users user) {
+        List<String> newPrs = new ArrayList<>();
+
+        for (WorkoutExercises we : workout.getWorkout_Exercises()) {
+            Long exerciseId = we.getExercises().getId();
+            String exerciseName = we.getExercises().getName();
+
+            List<Object[]> progressData = workoutExerciseRepository.getExerciseProgress(exerciseId, user.getId(),
+                    STATUS.COMPLETED);
+
+            Double historicalMaxWeight = 0.0;
+            if (progressData != null && !progressData.isEmpty() && progressData.get(0)[0] != null) {
+                historicalMaxWeight = Double.valueOf(progressData.get(0)[0].toString());
+            }
+
+            double currentWorkoutMax = 0.0;
+            if (we.getWorkoutSets() != null) {
+                for (WorkoutSets set : we.getWorkoutSets()) {
+                    if (set.getWeight() > currentWorkoutMax) {
+                        currentWorkoutMax = set.getWeight();
+                    }
+                }
+            }
+
+            System.out.println("DEBUG: Exercise: " + exerciseName);
+            System.out.println("DEBUG: Historical Max: " + historicalMaxWeight);
+            System.out.println("DEBUG: Current Workout Max: " + currentWorkoutMax);
+
+            if (currentWorkoutMax > historicalMaxWeight && currentWorkoutMax > 0) {
+                newPrs.add("🎉 New PR on " + exerciseName + ": " + currentWorkoutMax + " kg!");
+            }
+        }
+        return newPrs;
     }
 }

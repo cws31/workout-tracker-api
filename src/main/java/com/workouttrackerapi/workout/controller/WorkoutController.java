@@ -22,12 +22,13 @@ import com.workouttrackerapi.workout.dto.WorkoutCompletionResponse;
 import com.workouttrackerapi.workout.dto.WorkoutDetaiilsResponse;
 import com.workouttrackerapi.workout.dto.WorkoutRequest;
 import com.workouttrackerapi.workout.dto.WorkoutResponse;
+import com.workouttrackerapi.workout.dto.WorkoutSetRequest;
 import com.workouttrackerapi.workout.dto.reports.MonthlySummaryResponse;
 import com.workouttrackerapi.workout.dto.reports.ProgressResponse;
 import com.workouttrackerapi.workout.dto.reports.UpdateRequest;
 import com.workouttrackerapi.workout.dto.reports.WorkoutHistoryResponse;
 import com.workouttrackerapi.workout.enums.STATUS;
-
+import com.workouttrackerapi.workout.model.Workouts;
 import com.workouttrackerapi.workout.service.WorkoutService;
 
 import jakarta.validation.Valid;
@@ -91,12 +92,21 @@ public class WorkoutController {
     }
 
     @PostMapping("/{id}/complete")
-    public ResponseEntity<WorkoutCompletionResponse> completeWorkout(
+    public ResponseEntity<?> completeWorkout(
             @PathVariable Long id,
-            @RequestBody WorkoutCompletionRequest request, Authentication authrAuthentication) {
-        String email = authrAuthentication.getName();
-        Users user = userRepositories.findByEmail(email);
-        return ResponseEntity.ok(workoutService.completeWorkout(id, user, request));
+            @RequestBody WorkoutCompletionRequest request,
+            Authentication authentication) {
+        Users user = userRepositories.findByEmail(authentication.getName());
+
+        // Complete the workout and get the entity back
+        Workouts completedWorkout = workoutService.completeWorkout(id, user, request);
+
+        // Check for PRs achieved in this session
+        List<String> prs = workoutService.checkAndCelebratePRs(completedWorkout, user);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Workout marked as completed successfully!",
+                "newPersonalRecords", prs));
     }
 
     /////// ********* */ workout report controller *************//////////
@@ -125,5 +135,14 @@ public class WorkoutController {
         String email = authentication.getName();
         Users user = userRepositories.findByEmail(email);
         return ResponseEntity.ok(workoutService.getMonthlySummary(month, year, user));
+    }
+
+    @GetMapping("/last-performance/{exerciseId}")
+    public ResponseEntity<List<WorkoutSetRequest>> getLastPerformance(
+            @PathVariable Long exerciseId,
+            Authentication authentication) {
+        Users user = userRepositories.findByEmail(authentication.getName());
+        List<WorkoutSetRequest> lastSets = workoutService.getLastExercisePerformance(exerciseId, user);
+        return ResponseEntity.ok(lastSets);
     }
 }
